@@ -1,55 +1,39 @@
-import os
 from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
-
-basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'products.sqlite')
-db = SQLAlchemy(app)
 
-
-class Products(db.Model):
-    __tablename__ = 'products'
-    id = db.Column(db.Integer, primary_key=True)
-    product_name = db.Column(db.String(100), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    quantity = db.Column(db.Integer, default=0.0)
+products = [
+    {"id": 1, "product_name": "Coconut Water", "price": 10.99, "quantity": 20},
+    {"id": 2, "product_name": "Xylitol Gum", "price": 4.99, "quantity": 12},
+    {"id": 3, "product_name": "Rotisserie Chicken", "price": 6.99, "quantity": 7}
+]
 
 
 @app.route('/products', methods=['GET'])
 def get_products():
-    products = Products.query.all()
-    product_list = [{"product_name": product.product_name, "price": product.price, "quantity": product.quantity} for
-                    product in products]
-    return jsonify({"products": product_list})
+    return jsonify({"products": products})
 
 
 @app.route('/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
-    product = Products.query.get(product_id)
+    product = next((product for product in products if product["id"] == product_id), None)
     if product:
-        return jsonify(
-            {"product": {"product_name": product.product_name, "price": product.price, "quantity": product.quantity}})
+        return jsonify({"product": product})
     else:
-        return jsonify({"error": "Product not found"}), 404
+        return jsonify({"error": "Product not found."}), 404
 
 
 @app.route('/products', methods=['POST'])
 def add_product():
-    data = request.json
-    if "product_name" and "price" not in data:
-        return jsonify({"error": "Product name and price are required"}), 400
-
-    new_product = Products(product_name=data["product_name"], price=data["price"])
-
-    db.session.add(new_product)
-    db.session.commit()
-
-    return jsonify({"success": "Product added successfully", "product_id": new_product.id}), 201
+    new_product = {
+        "id": len(products) + 1,
+        "product_name": request.json.get('product_name'),
+        "price": request.json.get('price'),
+        "quantity": request.json.get('quantity')
+    }
+    products.append(new_product)
+    return jsonify({"message": "Product added", "product": new_product}), 201
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
