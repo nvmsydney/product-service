@@ -9,6 +9,11 @@ products = [
 ]
 
 
+@app.route('/', methods=['GET'])
+def home():
+    return "Welcome to Product Service!", 200
+
+
 @app.route('/products', methods=['GET'])
 def get_products():
     return jsonify({"products": products})
