@@ -9,7 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pr
 db = SQLAlchemy(app)
 
 
-class ProductService(db.Model):
+class Products(db.Model):
+    __tablename__ = 'products'
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -18,7 +19,7 @@ class ProductService(db.Model):
 
 @app.route('/products', methods=['GET'])
 def get_products():
-    products = ProductService.query.all()
+    products = Products.query.all()
     product_list = [{"product_name": product.product_name, "price": product.price, "quantity": product.quantity} for
                     product in products]
     return jsonify({"products": product_list})
@@ -26,7 +27,7 @@ def get_products():
 
 @app.route('/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
-    product = ProductService.query.get(product_id)
+    product = Products.query.get(product_id)
     if product:
         return jsonify(
             {"product": {"product_name": product.product_name, "price": product.price, "quantity": product.quantity}})
@@ -40,7 +41,7 @@ def add_product():
     if "product_name" and "price" not in data:
         return jsonify({"error": "Product name and price are required"}), 400
 
-    new_product = ProductService(product_name=data["product_name"], price=data["price"])
+    new_product = Products(product_name=data["product_name"], price=data["price"])
 
     db.session.add(new_product)
     db.session.commit()
